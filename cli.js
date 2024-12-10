@@ -52,7 +52,7 @@ const tmpTsconfig = {
     ...tsconfig.compilerOptions,
     skipLibCheck: true,
   },
-  files,
+  files: [...tsconfig.files, ...files],
   include: [],
 }
 fs.writeFileSync(tmpTsconfigPath, JSON.stringify(tmpTsconfig, null, 2))
@@ -72,6 +72,8 @@ for (const eventName of ['exit', 'SIGHUP', 'SIGINT', 'SIGTERM']) {
   })
 }
 
+const isPnpm = fs.existsSync(resolveFromRoot("./node_modules/.pnpm"))
+
 // Type-check our files
 const { status } = spawnSync(
   // See: https://github.com/gustavopch/tsc-files/issues/44#issuecomment-1250783206
@@ -79,10 +81,10 @@ const { status } = spawnSync(
     ? 'tsc'
     : resolveFromModule(
         'typescript',
-        `../.bin/tsc${process.platform === 'win32' ? '.cmd' : ''}`,
+        `${isPnpm ? '../../../' : ''}../.bin/tsc${process.platform === 'win32' ? '.cmd' : ''}`,
       ),
   ['-p', tmpTsconfigPath, ...remainingArgsToForward],
-  { stdio: 'inherit' },
+  { shell: true, stdio: 'inherit' },
 )
 
 process.exit(status)
